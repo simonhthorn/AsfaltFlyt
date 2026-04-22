@@ -1,0 +1,30 @@
+{
+  "name": "asfaltflyt",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Webapp for registrering av asfalttransport",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web \"npm:dev --workspace @asfaltflyt/api\" \"npm:dev --workspace @asfaltflyt/web\"",
+    "dev:api": "npm run dev --workspace @asfaltflyt/api",
+    "dev:web": "npm run dev --workspace @asfaltflyt/web",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simonhthorn/AsfaltFlyt.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/simonhthorn/AsfaltFlyt/issues"
+  },
+  "homepage": "https://github.com/simonhthorn/AsfaltFlyt#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
