@@ -2,35 +2,63 @@
 
 Webapp for bygg- og anleggsjaaforer som registrerer asfaltlass per kjoring, slik at prosjektleder kan folge med pa volum og status.
 
-## Kjør SQL-skjema mot Supabase (via secrets)
+## Kjør SQL-skjema mot Supabase (via API)
 
-Prosjektet har et script som leser secrets fra miljøvariabler og kjører `schema.sql` mot Supabase:
+Prosjektet har et script som leser miljøvariabler og kjører `schema.sql` mot Supabase.
+Scriptet støtter to flyter:
+
+- **Management API** (anbefalt): bruker `https://api.supabase.com/v1/projects/<ref>/database/query`
+- **Project endpoint** (fallback): bruker prosjekt-URL + `SUPABASE_SQL_PATH` (default `/sql/v1`)
+
+Kjøring:
 
 ```bash
 python3 scripts/apply_supabase_schema.py
 ```
 
-### Secrets / miljøvariabler
+Du kan også velge modus eksplisitt:
 
-- `SUPABASE_URL` (påkrevd) - f.eks. `https://<project-ref>.supabase.co`
-- API key (påkrevd), scriptet støtter disse i prioritert rekkefølge:
-  - `SUPABASE_SECRET_ACCESS_KEY` (anbefalt for schema-endringer)
-  - `SUPABASE_SERVICE_ROLE_KEY`
-  - `SUPABASE_API_KEY`
-  - `SUPABASE_PUBLIC_ACCESS_KEY` (kun fallback, kan mangle rettigheter)
-- `SUPABASE_SQL_PATH` (valgfri, default `/sql/v1`)
-- `SUPABASE_SQL_PAYLOAD_KEY` (valgfri, default `query`)
+```bash
+python3 scripts/apply_supabase_schema.py --mode auto        # default
+python3 scripts/apply_supabase_schema.py --mode management  # kun Management API
+python3 scripts/apply_supabase_schema.py --mode project     # kun project endpoint
+```
 
-Scriptet sender API-key både som `apikey` og `Authorization: Bearer ...`.
+### Miljøvariabler
+
+- **Management API (anbefalt i auto/mode=management):**
+  - `SUPABASE_MANAGEMENT_TOKEN` eller `SUPABASE_ACCESS_TOKEN` eller `SUPABASE_PAT` (PAT/OAuth token)
+  - `SUPABASE_PROJECT_REF` (valgfri hvis den kan utledes fra `SUPABASE_URL`)
+  - `SUPABASE_MANAGEMENT_API_BASE` (valgfri, default `https://api.supabase.com`)
+- **Project endpoint (brukes i mode=project eller som fallback):**
+  - `SUPABASE_URL` (påkrevd for project-flyt) - f.eks. `https://<project-ref>.supabase.co`
+  - API key (påkrevd), scriptet støtter disse i prioritert rekkefølge:
+    - `SUPABASE_SECRET_ACCESS_KEY` eller `SUPABASE_API_SECRET_KEY` (anbefalt)
+    - `SUPABASE_SERVICE_ROLE_KEY`
+    - `SUPABASE_API_KEY`
+    - `SUPABASE_PUBLIC_ACCESS_KEY` eller `SUPABASE_API_PUBLIC_KEY` (kun fallback, kan mangle rettigheter)
+  - `SUPABASE_SQL_PATH` (valgfri, default `/sql/v1`)
+  - `SUPABASE_SQL_ENDPOINT` (valgfri full URL, overstyrer `SUPABASE_URL + SUPABASE_SQL_PATH`)
+  - `SUPABASE_SQL_PAYLOAD_KEY` (valgfri, default `query`)
+
+I project-flyt sender scriptet API-key både som `apikey` og `Authorization: Bearer ...`.
 
 > Merk: Secrets fra Cursor Cloud blir eksponert som miljøvariabler ved agent-oppstart.
 > Hvis du nettopp har lagt til eller endret secrets, restart agenten før du kjører scriptet.
 
-Eksempel med eksplisitte variabler:
+Eksempel: Management API (anbefalt):
+
+```bash
+SUPABASE_PROJECT_REF="<project-ref>" \
+SUPABASE_MANAGEMENT_TOKEN="<supabase-pat-eller-oauth-token>" \
+python3 scripts/apply_supabase_schema.py --mode management --sql-file schema.sql
+```
+
+Eksempel: project endpoint:
 
 ```bash
 SUPABASE_URL="https://<project-ref>.supabase.co" \
-SUPABASE_SERVICE_ROLE_KEY="<service-role-key>" \
+SUPABASE_API_SECRET_KEY="<sb_secret_...>" \
 python3 scripts/apply_supabase_schema.py --sql-file schema.sql
 ```
 
