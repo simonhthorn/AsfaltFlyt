@@ -1,6 +1,31 @@
 # AsfaltFlyt
 Tracking av asfalttransport
 
+## Kjør SQL-skjema mot Supabase (via secrets)
+
+Prosjektet har nå et script som leser secrets fra miljøvariabler og kjører `schema.sql` mot Supabase:
+
+```bash
+python3 scripts/apply_supabase_schema.py
+```
+
+### Secrets / miljøvariabler
+
+- `SUPABASE_URL` (påkrevd) - f.eks. `https://<project-ref>.supabase.co`
+- `SUPABASE_SERVICE_ROLE_KEY` (påkrevd, eller `SUPABASE_API_KEY` som fallback)
+- `SUPABASE_SQL_PATH` (valgfri, default `/sql/v1`)
+- `SUPABASE_SQL_PAYLOAD_KEY` (valgfri, default `query`)
+
+Scriptet sender API-key både som `apikey` og `Authorization: Bearer ...`.
+
+Eksempel med eksplisitte variabler:
+
+```bash
+SUPABASE_URL="https://<project-ref>.supabase.co" \
+SUPABASE_SERVICE_ROLE_KEY="<service-role-key>" \
+python3 scripts/apply_supabase_schema.py --sql-file schema.sql
+```
+
 ## Cursor Cloud (cursor.com)
 
 Repoet er koblet til GitHub og har [`AGENTS.md`](AGENTS.md) samt [`.cursor/environment.json`](.cursor/environment.json) for [Cloud Agents](https://cursor.com/docs/cloud-agent).
