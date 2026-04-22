@@ -1,0 +1,26 @@
+{
+  "name": "@asfaltflyt/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "prebuild": "npm run build --workspace @asfaltflyt/domain",
+    "build": "tsc -p tsconfig.json",
+    "copy:web": "mkdir -p dist/public && cp -R ../web/dist/. dist/public",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@asfaltflyt/domain": "*",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

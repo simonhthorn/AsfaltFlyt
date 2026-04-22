@@ -201,6 +201,13 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# Node / monorepo
+node_modules/
+coverage/
+*.tsbuildinfo
+apps/*/dist/
+packages/*/dist/
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
