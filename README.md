@@ -61,6 +61,8 @@ Alternativt kan Railway bruke `railway.json` i repoet, som allerede setter:
 - build command: `npm run build`
 - start command: `npm run start`
 
+Merk: frontend er satt opp med Vite-versjon som er kompatibel med Railway sitt vanlige Node 22.11-miljo for a unnga native binding-feil i build.
+
 ## API-endepunkter
 
 - `GET /health` - helsesjekk
