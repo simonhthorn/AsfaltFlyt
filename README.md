@@ -22,6 +22,9 @@ python3 scripts/apply_supabase_schema.py
 
 Scriptet sender API-key både som `apikey` og `Authorization: Bearer ...`.
 
+> Merk: Secrets fra Cursor Cloud blir eksponert som miljøvariabler ved agent-oppstart.
+> Hvis du nettopp har lagt til eller endret secrets, restart agenten før du kjører scriptet.
+
 Eksempel med eksplisitte variabler:
 
 ```bash
