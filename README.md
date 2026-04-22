@@ -2,6 +2,38 @@
 
 Webapp for bygg- og anleggsjaaforer som registrerer asfaltlass per kjoring, slik at prosjektleder kan folge med pa volum og status.
 
+## Kjør SQL-skjema mot Supabase (via secrets)
+
+Prosjektet har et script som leser secrets fra miljøvariabler og kjører `schema.sql` mot Supabase:
+
+```bash
+python3 scripts/apply_supabase_schema.py
+```
+
+### Secrets / miljøvariabler
+
+- `SUPABASE_URL` (påkrevd) - f.eks. `https://<project-ref>.supabase.co`
+- API key (påkrevd), scriptet støtter disse i prioritert rekkefølge:
+  - `SUPABASE_SECRET_ACCESS_KEY` (anbefalt for schema-endringer)
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `SUPABASE_API_KEY`
+  - `SUPABASE_PUBLIC_ACCESS_KEY` (kun fallback, kan mangle rettigheter)
+- `SUPABASE_SQL_PATH` (valgfri, default `/sql/v1`)
+- `SUPABASE_SQL_PAYLOAD_KEY` (valgfri, default `query`)
+
+Scriptet sender API-key både som `apikey` og `Authorization: Bearer ...`.
+
+> Merk: Secrets fra Cursor Cloud blir eksponert som miljøvariabler ved agent-oppstart.
+> Hvis du nettopp har lagt til eller endret secrets, restart agenten før du kjører scriptet.
+
+Eksempel med eksplisitte variabler:
+
+```bash
+SUPABASE_URL="https://<project-ref>.supabase.co" \
+SUPABASE_SERVICE_ROLE_KEY="<service-role-key>" \
+python3 scripts/apply_supabase_schema.py --sql-file schema.sql
+```
+
 ## Mappestruktur
 
 ```text
