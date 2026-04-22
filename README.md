@@ -58,7 +58,7 @@ Dette repoet er satt opp for en enkel Railway-service som kj0rer baade API og fr
 
 Alternativt kan Railway bruke `railway.json` i repoet, som allerede setter:
 
-- build command: `npm ci && npm run build`
+- build command: `npm run build`
 - start command: `npm run start`
 
 ## API-endepunkter
