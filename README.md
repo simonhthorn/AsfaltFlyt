@@ -56,7 +56,10 @@ Dette repoet er satt opp for en enkel Railway-service som kj0rer baade API og fr
 - **Start Command**: `npm run start`
 - **Port**: Railway setter `PORT` automatisk (appen bruker `process.env.PORT`)
 
-Alternativt kan Railway bruke `railway.json` i repoet.
+Alternativt kan Railway bruke `railway.json` i repoet, som allerede setter:
+
+- build command: `npm ci && npm run build`
+- start command: `npm run start`
 
 ## API-endepunkter
 
