@@ -11,9 +11,14 @@
     "dev": "concurrently -n api,web \"npm:dev --workspace @asfaltflyt/api\" \"npm:dev --workspace @asfaltflyt/web\"",
     "dev:api": "npm run dev --workspace @asfaltflyt/api",
     "dev:web": "npm run dev --workspace @asfaltflyt/web",
+    "start": "npm run start --workspace @asfaltflyt/api",
     "build": "npm run build --workspaces",
+    "build:railway": "npm run build --workspace @asfaltflyt/domain && npm run build --workspace @asfaltflyt/api && npm run build --workspace @asfaltflyt/web",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "repository": {
     "type": "git",

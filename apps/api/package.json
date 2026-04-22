@@ -8,6 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "prebuild": "npm run build --workspace @asfaltflyt/domain",
     "build": "tsc -p tsconfig.json",
+    "copy:web": "mkdir -p dist/public && cp -R ../web/dist/. dist/public",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

@@ -16,7 +16,7 @@ Webapp for bygg- og anleggsjaaforer som registrerer asfaltlass per kjoring, slik
 \- tsconfig.base.json # Felles TypeScript-oppsett
 ```
 
-## Kom i gang
+## Lokal utvikling
 
 Krav: Node.js 20+ og npm 10+.
 
@@ -40,6 +40,23 @@ npm run build       # Bygger alle workspaces
 npm run lint        # Linter alle workspaces som har lint-script
 npm run typecheck   # Typecheck i alle workspaces
 ```
+
+## Deploy paa Railway
+
+Dette repoet er satt opp for en enkel Railway-service som kj0rer baade API og frontend fra samme Node-prosess.
+
+### Viktige scripts
+
+- `npm run build` - bygger domain + api + web
+- `npm run start` - starter API og serverer frontend fra `apps/web/dist`
+
+### Anbefalt oppsett i Railway
+
+- **Build Command**: `npm run build`
+- **Start Command**: `npm run start`
+- **Port**: Railway setter `PORT` automatisk (appen bruker `process.env.PORT`)
+
+Alternativt kan Railway bruke `railway.json` i repoet.
 
 ## API-endepunkter
 
