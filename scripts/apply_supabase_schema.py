@@ -77,9 +77,13 @@ def main() -> int:
     args = parser.parse_args()
 
     supabase_url = os.getenv("SUPABASE_URL", "").strip()
+    secret_access_key = os.getenv("SUPABASE_SECRET_ACCESS_KEY", "").strip()
+    public_access_key = os.getenv("SUPABASE_PUBLIC_ACCESS_KEY", "").strip()
     api_key = (
-        os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+        secret_access_key
+        or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
         or os.getenv("SUPABASE_API_KEY", "").strip()
+        or public_access_key
     )
     sql_path = os.getenv("SUPABASE_SQL_PATH", "/sql/v1").strip() or "/sql/v1"
     payload_key = os.getenv("SUPABASE_SQL_PAYLOAD_KEY", "query").strip() or "query"
@@ -88,8 +92,17 @@ def main() -> int:
         print("Mangler secret: SUPABASE_URL", file=sys.stderr)
         return 1
     if not api_key:
-        print("Mangler secret: SUPABASE_SERVICE_ROLE_KEY (eller SUPABASE_API_KEY)", file=sys.stderr)
+        print(
+            "Mangler API key secret: SUPABASE_SECRET_ACCESS_KEY, "
+            "SUPABASE_SERVICE_ROLE_KEY, SUPABASE_API_KEY eller SUPABASE_PUBLIC_ACCESS_KEY",
+            file=sys.stderr,
+        )
         return 1
+    if not secret_access_key and public_access_key:
+        print(
+            "Merk: bruker SUPABASE_PUBLIC_ACCESS_KEY. For schema-endringer anbefales SUPABASE_SECRET_ACCESS_KEY.",
+            file=sys.stderr,
+        )
 
     sql = read_sql_file(Path(args.sql_file))
     endpoint = build_endpoint(supabase_url, sql_path)

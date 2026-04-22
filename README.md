@@ -12,7 +12,11 @@ python3 scripts/apply_supabase_schema.py
 ### Secrets / miljøvariabler
 
 - `SUPABASE_URL` (påkrevd) - f.eks. `https://<project-ref>.supabase.co`
-- `SUPABASE_SERVICE_ROLE_KEY` (påkrevd, eller `SUPABASE_API_KEY` som fallback)
+- API key (påkrevd), scriptet støtter disse i prioritert rekkefølge:
+  - `SUPABASE_SECRET_ACCESS_KEY` (anbefalt for schema-endringer)
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `SUPABASE_API_KEY`
+  - `SUPABASE_PUBLIC_ACCESS_KEY` (kun fallback, kan mangle rettigheter)
 - `SUPABASE_SQL_PATH` (valgfri, default `/sql/v1`)
 - `SUPABASE_SQL_PAYLOAD_KEY` (valgfri, default `query`)
 
