@@ -156,9 +156,10 @@ def main() -> int:
     supabase_url = os.getenv("SUPABASE_URL", "").strip()
     project_ref = os.getenv("SUPABASE_PROJECT_REF", "").strip() or extract_project_ref(supabase_url)
     management_token = (
-        os.getenv("SUPABASE_MANAGEMENT_TOKEN", "").strip()
-        or os.getenv("SUPABASE_ACCESS_TOKEN", "").strip()
+        os.getenv("SUPABASE_ACCESS_TOKEN", "").strip()
+        or os.getenv("SUPABASE_MANAGEMENT_TOKEN", "").strip()
         or os.getenv("SUPABASE_PAT", "").strip()
+        or os.getenv("ACCESS_TOKEN", "").strip()
     )
     management_api_base = os.getenv("SUPABASE_MANAGEMENT_API_BASE", DEFAULT_MGMT_API_BASE).strip() or DEFAULT_MGMT_API_BASE
 
@@ -195,7 +196,8 @@ def main() -> int:
 
     if args.mode == "management":
         print(
-            "Mangler Management API token: SUPABASE_MANAGEMENT_TOKEN, SUPABASE_ACCESS_TOKEN eller SUPABASE_PAT.",
+            "Mangler Management API token: SUPABASE_ACCESS_TOKEN, SUPABASE_MANAGEMENT_TOKEN, "
+            "SUPABASE_PAT eller ACCESS_TOKEN.",
             file=sys.stderr,
         )
         return 1

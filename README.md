@@ -27,7 +27,7 @@ python3 scripts/apply_supabase_schema.py --mode project     # kun project endpoi
 ### Miljøvariabler
 
 - **Management API (anbefalt i auto/mode=management):**
-  - `SUPABASE_MANAGEMENT_TOKEN` eller `SUPABASE_ACCESS_TOKEN` eller `SUPABASE_PAT` (PAT/OAuth token)
+  - `SUPABASE_ACCESS_TOKEN` (førsteprioritet) eller `SUPABASE_MANAGEMENT_TOKEN` eller `SUPABASE_PAT` (PAT/OAuth token)
   - `SUPABASE_PROJECT_REF` (valgfri hvis den kan utledes fra `SUPABASE_URL`)
   - `SUPABASE_MANAGEMENT_API_BASE` (valgfri, default `https://api.supabase.com`)
 - **Project endpoint (brukes i mode=project eller som fallback):**
