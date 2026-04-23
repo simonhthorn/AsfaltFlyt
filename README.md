@@ -156,13 +156,13 @@ Valgfritt:
   Kan settes som enten `table` eller `schema.table`.
 - `SUPABASE_DELIVERY_SCHEMA` - overstyr schema (default `public`) hvis `SUPABASE_DELIVERY_TABLE`
   ikke allerede inneholder schema.
-- `SUPABASE_SQL_ENDPOINT` / `SUPABASE_SQL_PATH` / `SUPABASE_SQL_PAYLOAD_KEY` - brukes hvis API-et
-  må opprette manglende tabell automatisk.
+- `SUPABASE_PROJECT_REF` - valgfri hvis den kan utledes fra `SUPABASE_URL`, men anbefalt i Railway.
+- `SUPABASE_MANAGEMENT_API_BASE` - valgfri (default `https://api.supabase.com`).
 
 Tabellen `driver_delivery_confirmations` er lagt til i `schema.sql` og brukes som standard.
 Hvis API-et får `PGRST205` (tabell ikke i PostgREST schema cache), forsøker det å:
 
-1. opprette schema/tabell idempotent via SQL-endpoint
+1. opprette schema/tabell idempotent via Supabase Management API
 2. sende `NOTIFY pgrst, 'reload schema'`
 3. retrye opplasting én gang
 

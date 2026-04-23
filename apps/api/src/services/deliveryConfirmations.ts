@@ -1,6 +1,6 @@
 const DEFAULT_DELIVERY_CONFIRMATIONS_TABLE = "driver_delivery_confirmations";
 const DEFAULT_DELIVERY_SCHEMA = "public";
-const DEFAULT_SQL_PATH = "/sql/v1";
+const DEFAULT_MGMT_API_BASE = "https://api.supabase.com";
 
 type DeliveryConfirmationInsert = {
   trip_number: number;
@@ -34,6 +34,11 @@ type SupabaseResponseError = {
   status: number;
   text: string;
   parsed: SupabaseErrorPayload | null;
+};
+
+type ManagementApiConfig = {
+  endpoint: string;
+  token: string;
 };
 
 function isLikelyJwt(token: string): boolean {
@@ -113,18 +118,54 @@ function getSupabaseBaseUrl(): string {
   return supabaseUrl.replace(/\/+$/, "");
 }
 
+function extractProjectRefFromSupabaseUrl(baseUrl: string): string {
+  let hostname = "";
+  try {
+    hostname = new URL(baseUrl).hostname;
+  } catch {
+    return "";
+  }
+
+  const parts = hostname.split(".");
+  if (parts.length < 3) {
+    return "";
+  }
+
+  if (parts.at(-2) !== "supabase" || parts.at(-1) !== "co") {
+    return "";
+  }
+
+  return parts[0] ?? "";
+}
+
 function buildSupabaseRestEndpoint(baseUrl: string, target: DeliveryTarget): string {
   return `${baseUrl}/rest/v1/${encodeURIComponent(target.table)}`;
 }
 
-function buildSupabaseSqlEndpoint(baseUrl: string): string {
-  const override = process.env.SUPABASE_SQL_ENDPOINT?.trim() || "";
-  if (override) {
-    return override;
+function buildManagementApiConfig(baseUrl: string): ManagementApiConfig {
+  const token =
+    process.env.SUPABASE_ACCESS_TOKEN?.trim() ||
+    process.env.SUPABASE_MANAGEMENT_TOKEN?.trim() ||
+    process.env.SUPABASE_PAT?.trim() ||
+    "";
+
+  if (!token) {
+    throw new Error(
+      "Mangler tabell i Supabase og ingen management token er satt. Sett SUPABASE_ACCESS_TOKEN, SUPABASE_MANAGEMENT_TOKEN eller SUPABASE_PAT, eller kjør schema.sql manuelt før opplasting.",
+    );
   }
 
-  const path = process.env.SUPABASE_SQL_PATH?.trim() || DEFAULT_SQL_PATH;
-  return `${baseUrl}/${path.replace(/^\/+/, "")}`;
+  const projectRef = process.env.SUPABASE_PROJECT_REF?.trim() || extractProjectRefFromSupabaseUrl(baseUrl);
+  if (!projectRef) {
+    throw new Error(
+      "Mangler SUPABASE_PROJECT_REF (og kunne ikke utlede fra SUPABASE_URL). Kan ikke opprette tabell via Management API.",
+    );
+  }
+
+  const mgmtApiBase = process.env.SUPABASE_MANAGEMENT_API_BASE?.trim() || DEFAULT_MGMT_API_BASE;
+  const endpoint = `${mgmtApiBase.replace(/\/+$/, "")}/v1/projects/${projectRef}/database/query`;
+
+  return { endpoint, token };
 }
 
 function buildSupabaseHeaders(credentials: SupabaseCredentials, schema: string): Record<string, string> {
@@ -225,33 +266,26 @@ NOTIFY pgrst, 'reload schema';
 async function ensureDeliveryTableExists(
   baseUrl: string,
   target: DeliveryTarget,
-  credentials: SupabaseCredentials,
+  _credentials: SupabaseCredentials,
 ): Promise<void> {
-  const endpoint = buildSupabaseSqlEndpoint(baseUrl);
-  const headers = buildSupabaseHeaders(credentials, target.schema);
-  const payloadKey = process.env.SUPABASE_SQL_PAYLOAD_KEY?.trim() || "query";
+  const { endpoint, token } = buildManagementApiConfig(baseUrl);
   const sql = buildCreateTableSql(target);
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ query: sql }),
+  });
 
-  const keysToTry = [payloadKey, "query", "sql"].filter((value, index, all) => value && all.indexOf(value) === index);
-  const errors: string[] = [];
-
-  for (const key of keysToTry) {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ [key]: sql }),
-    });
-
-    if (response.ok) {
-      return;
-    }
-
-    const body = await response.text().catch(() => "");
-    errors.push(`[${key}] HTTP ${response.status}: ${body || "Ukjent feil"}`);
+  if (response.ok) {
+    return;
   }
 
+  const body = await response.text().catch(() => "");
   throw new Error(
-    `Klarte ikke opprette manglende tabell '${target.qualified}' automatisk via SQL-endpoint.\n${errors.join("\n")}`,
+    `Klarte ikke opprette manglende tabell '${target.qualified}' automatisk via Supabase Management API (HTTP ${response.status}): ${body || "Ukjent feil"}`,
   );
 }
 
