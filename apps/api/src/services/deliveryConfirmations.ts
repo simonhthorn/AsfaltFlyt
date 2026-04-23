@@ -9,6 +9,11 @@ type DeliveryConfirmationInsert = {
   last_deviation: string | null;
 };
 
+function isLikelyJwt(token: string): boolean {
+  const parts = token.split(".");
+  return parts.length === 3 && parts.every((part) => part.length > 0);
+}
+
 function pickSupabaseCredential() {
   const secretAccessKey =
     process.env.SUPABASE_SECRET_ACCESS_KEY?.trim() || process.env.SUPABASE_API_SECRET_KEY?.trim() || "";
@@ -23,7 +28,7 @@ function pickSupabaseCredential() {
     "";
 
   const apiKey = secretAccessKey || serviceRoleKey || genericApiKey || publicAccessKey || accessToken;
-  const bearerToken = accessToken || apiKey;
+  const bearerToken = [accessToken, serviceRoleKey, genericApiKey, publicAccessKey].find(isLikelyJwt) || "";
 
   return { apiKey, bearerToken };
 }
@@ -46,20 +51,25 @@ export async function uploadDeliveryConfirmationToSupabase(payload: DeliveryConf
   const endpoint = getSupabaseRestEndpoint();
   const { apiKey, bearerToken } = pickSupabaseCredential();
 
-  if (!apiKey || !bearerToken) {
+  if (!apiKey) {
     throw new Error(
       "Mangler Supabase-nøkkel. Sett en av SUPABASE_SECRET_ACCESS_KEY, SUPABASE_API_SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_API_KEY, SUPABASE_PUBLIC_ACCESS_KEY, SUPABASE_API_PUBLIC_KEY eller SUPABASE_ACCESS_TOKEN.",
     );
   }
 
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    apikey: apiKey,
+    Prefer: "return=minimal",
+  };
+
+  if (bearerToken) {
+    headers.Authorization = `Bearer ${bearerToken}`;
+  }
+
   const response = await fetch(endpoint, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: apiKey,
-      Authorization: `Bearer ${bearerToken}`,
-      Prefer: "return=minimal",
-    },
+    headers,
     body: JSON.stringify(payload),
   });
 

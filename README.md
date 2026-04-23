@@ -147,6 +147,9 @@ Sett disse miljøvariablene på API/server (ikke i frontend):
   - `SUPABASE_ACCESS_TOKEN` (støttes også)
   - `SUPABASE_MANAGEMENT_TOKEN` / `SUPABASE_PAT` (støttes også)
 
+Merk: API-et sender `Authorization: Bearer ...` kun når verdien ser ut som en JWT
+(tre deler separert med punktum). For `sb_secret_...` brukes kun `apikey`-header.
+
 Valgfritt:
 
 - `SUPABASE_DELIVERY_TABLE` - overstyr tabellnavn (default `driver_delivery_confirmations`)
