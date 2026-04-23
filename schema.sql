@@ -124,6 +124,17 @@ CREATE TABLE trip_gps_positions (
     heading_degrees NUMERIC(5,2) CHECK (heading_degrees >= 0 AND heading_degrees < 360)
 );
 
+CREATE TABLE driver_delivery_confirmations (
+    confirmation_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    trip_number INTEGER NOT NULL CHECK (trip_number > 0),
+    flow_step TEXT NOT NULL,
+    action_label TEXT NOT NULL,
+    confirmed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    gps_online BOOLEAN NOT NULL DEFAULT TRUE,
+    last_deviation TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX idx_drivers_company_id ON drivers(company_id);
 CREATE INDEX idx_vehicles_company_id ON vehicles(company_id);
 CREATE INDEX idx_orders_company_id ON transport_orders(company_id);
@@ -134,3 +145,5 @@ CREATE INDEX idx_trips_vehicle_id ON trips(vehicle_id);
 CREATE INDEX idx_trip_status_history_trip_id ON trip_status_history(trip_id);
 CREATE INDEX idx_trip_status_history_changed_at ON trip_status_history(changed_at);
 CREATE INDEX idx_trip_gps_positions_trip_time ON trip_gps_positions(trip_id, recorded_at);
+CREATE INDEX idx_delivery_confirmations_confirmed_at ON driver_delivery_confirmations(confirmed_at DESC);
+CREATE INDEX idx_delivery_confirmations_trip_number ON driver_delivery_confirmations(trip_number);

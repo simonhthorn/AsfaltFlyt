@@ -133,6 +133,17 @@ npm install
 npm run dev
 ```
 
+### Frontend -> Supabase ved "Bekreft levering"
+
+Webappen skriver direkte til Supabase når sjåfør trykker **Bekreft levering**.
+
+Sett disse miljøvariablene for frontend (f.eks. i Railway eller lokalt shell før `npm run dev:web`):
+
+- `VITE_SUPABASE_URL` - prosjekt-URL, f.eks. `https://<project-ref>.supabase.co`
+- `VITE_SUPABASE_ANON_KEY` - public/anon key fra Supabase-prosjektet
+
+Tabellen `driver_delivery_confirmations` er lagt til i `schema.sql` og brukes som standard for opplastingen.
+
 Dette starter:
 
 - API paa `http://localhost:4000`
