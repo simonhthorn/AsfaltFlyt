@@ -1,9 +1,5 @@
 import { useState, type FormEvent } from "react";
-import {
-  SUPABASE_DELIVERY_TABLE,
-  type DeliveryConfirmationInsert,
-  getSupabaseClient,
-} from "./supabase";
+import { uploadDeliveryConfirmation as uploadDeliveryConfirmationApi } from "./api/trips";
 
 const FLOW_STEPS = ["På fabrikk", "Underveis", "Ankommet utlegger", "Levert"] as const;
 const EMPLOYEES = ["Ola Nordmann", "Kari Hansen", "Morten Nilsen", "Fatima Ali"] as const;
@@ -43,23 +39,16 @@ function App() {
   const [isUploading, setIsUploading] = useState(false);
   const isDeliveryConfirmationStep = currentStep === DELIVERY_CONFIRMATION_STEP_INDEX;
 
-  async function uploadDeliveryConfirmation() {
-    const supabase = getSupabaseClient();
+  async function submitDeliveryConfirmation() {
     const confirmedAt = new Date().toISOString();
-    const payload: DeliveryConfirmationInsert = {
-      trip_number: tripNumber,
-      flow_step: FLOW_STEPS[currentStep],
-      action_label: ACTION_LABELS[currentStep],
-      confirmed_at: confirmedAt,
-      gps_online: gpsOnline,
-      last_deviation: lastDeviation,
-    };
-
-    const { error } = await supabase.from(SUPABASE_DELIVERY_TABLE).insert(payload);
-
-    if (error) {
-      throw new Error(`Klarte ikke laste opp til Supabase: ${error.message}`);
-    }
+    await uploadDeliveryConfirmationApi({
+      tripNumber,
+      flowStep: FLOW_STEPS[currentStep],
+      actionLabel: ACTION_LABELS[currentStep],
+      confirmedAt,
+      gpsOnline,
+      lastDeviation,
+    });
   }
 
   function handleLogin(event: FormEvent<HTMLFormElement>) {
@@ -111,7 +100,7 @@ function App() {
       setUploadState(null);
 
       try {
-        await uploadDeliveryConfirmation();
+        await submitDeliveryConfirmation();
         setCurrentStep((previous) => previous + 1);
         setUploadState({
           type: "success",

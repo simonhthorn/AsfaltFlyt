@@ -133,16 +133,25 @@ npm install
 npm run dev
 ```
 
-### Frontend -> Supabase ved "Bekreft levering"
+### Bekreft levering -> Supabase (via API, ingen Vite-variabler)
 
-Webappen skriver direkte til Supabase når sjåfør trykker **Bekreft levering**.
+Når sjåfør trykker **Bekreft levering**, sender frontend data til API-et (`POST /api/trips/delivery-confirmations`).
+API-et laster deretter opp til Supabase server-side.
 
-Sett disse miljøvariablene for frontend (f.eks. i Railway eller lokalt shell før `npm run dev:web`):
+Sett disse miljøvariablene på API/server (ikke i frontend):
 
-- `VITE_SUPABASE_URL` - prosjekt-URL, f.eks. `https://<project-ref>.supabase.co`
-- `VITE_SUPABASE_ANON_KEY` - public/anon key fra Supabase-prosjektet
+- `SUPABASE_URL` - prosjekt-URL, f.eks. `https://<project-ref>.supabase.co`
+- ett av disse credentials-feltene:
+  - `SUPABASE_SECRET_ACCESS_KEY` (anbefalt) eller `SUPABASE_API_SECRET_KEY`
+  - `SUPABASE_PUBLIC_ACCESS_KEY` eller `SUPABASE_API_PUBLIC_KEY`
+  - `SUPABASE_ACCESS_TOKEN` (støttes også)
+  - `SUPABASE_MANAGEMENT_TOKEN` / `SUPABASE_PAT` (støttes også)
 
-Tabellen `driver_delivery_confirmations` er lagt til i `schema.sql` og brukes som standard for opplastingen.
+Valgfritt:
+
+- `SUPABASE_DELIVERY_TABLE` - overstyr tabellnavn (default `driver_delivery_confirmations`)
+
+Tabellen `driver_delivery_confirmations` er lagt til i `schema.sql` og brukes som standard.
 
 Dette starter:
 
@@ -187,6 +196,7 @@ Merk: frontend er satt opp med Vite-versjon som er kompatibel med Railway sitt v
 - `GET /health` - helsesjekk
 - `GET /api/trips` - henter alle registrerte kjoringer + summer per prosjekt
 - `POST /api/trips` - registrerer ny kjoring
+- `POST /api/trips/delivery-confirmations` - laster opp leveringsbekreftelse til Supabase via API-server
 
 Eksempel payload:
 

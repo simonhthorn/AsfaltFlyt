@@ -29,3 +29,29 @@ export async function createTrip(payload: CreateTripRequest) {
 
   return (await response.json()) as { message: string };
 }
+
+type DeliveryConfirmationRequest = {
+  tripNumber: number;
+  flowStep: string;
+  actionLabel: string;
+  confirmedAt: string;
+  gpsOnline: boolean;
+  lastDeviation: string | null;
+};
+
+export async function uploadDeliveryConfirmation(payload: DeliveryConfirmationRequest) {
+  const response = await fetch(`${TRIPS_ENDPOINT}/delivery-confirmations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(body?.error ?? "Klarte ikke laste opp leveringsbekreftelse.");
+  }
+
+  return (await response.json()) as { message: string };
+}

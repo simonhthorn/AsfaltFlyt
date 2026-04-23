@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@asfaltflyt/domain": "*",
-    "@supabase/supabase-js": "^2.104.0",
     "@tailwindcss/vite": "^4.2.4",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
