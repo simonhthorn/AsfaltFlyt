@@ -1,87 +1,111 @@
-import { useCallback, useEffect, useState } from "react";
-import { createTrip, fetchTrips } from "./api/trips";
-import { TripForm } from "./components/TripForm";
-import { TripTable } from "./components/TripTable";
-import type { NewTripFormData, TripsResponse } from "./types/trips";
-import "./App.css";
+import { useState } from "react";
 
-const EMPTY_OVERVIEW: TripsResponse = {
-  trips: [],
-  projectTotals: [],
-};
+const FLOW_STEPS = ["På fabrikk", "Underveis", "Ankommet utlegger", "Levert"] as const;
+
+const ACTION_STYLES = [
+  "bg-emerald-500 text-slate-950 active:bg-emerald-400",
+  "bg-yellow-400 text-slate-950 active:bg-yellow-300",
+  "bg-yellow-400 text-slate-950 active:bg-yellow-300",
+  "bg-emerald-500 text-slate-950 active:bg-emerald-400",
+] as const;
+
+const ACTION_LABELS = [
+  "Start tur",
+  "Registrer ankomst",
+  "Bekreft levering",
+  "Start ny tur",
+] as const;
 
 function App() {
-  const [overview, setOverview] = useState<TripsResponse>(EMPTY_OVERVIEW);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [tripNumber, setTripNumber] = useState(1234);
+  const [currentStep, setCurrentStep] = useState(0);
+  const gpsOnline = true;
+  const [lastDeviation, setLastDeviation] = useState<string | null>(null);
 
-  const loadOverview = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const data = await fetchTrips();
-      setOverview(data);
-    } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : "Kunne ikke hente data.");
-    } finally {
-      setLoading(false);
+  function handleMainAction() {
+    if (currentStep === FLOW_STEPS.length - 1) {
+      setCurrentStep(0);
+      setTripNumber((previous) => previous + 1);
+      setLastDeviation(null);
+      return;
     }
-  }, []);
 
-  useEffect(() => {
-    void loadOverview();
-  }, [loadOverview]);
+    setCurrentStep((previous) => previous + 1);
+  }
 
-  const handleRegisterTrip = async (input: NewTripFormData) => {
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
+  function registerDeviation() {
+    const timestamp = new Date().toLocaleTimeString("nb-NO", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
-    try {
-      await createTrip(input);
-      setSuccess("Kjøring ble registrert.");
-
-      const data = await fetchTrips();
-      setOverview(data);
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Kunne ikke registrere kjøring.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const totalLoads = overview.trips.length;
-  const totalTons = overview.projectTotals.reduce((sum, project) => sum + project.totalTons, 0);
+    setLastDeviation(`Avvik registrert kl. ${timestamp}`);
+  }
 
   return (
-    <main className="app">
-      <header className="app__header">
-        <p className="app__subtitle">AsfaltFlyt</p>
-        <h1>Registrering av asfaltlass</h1>
-        <p className="app__subtitle">
-          Sjåfører registrerer hvert lass, og prosjektleder får løpende kontroll på tonnasje per prosjekt.
-        </p>
-      </header>
+    <main className="h-[100dvh] bg-slate-900 text-slate-50">
+      <div className="mx-auto flex h-full w-full max-w-md flex-col px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-[max(env(safe-area-inset-top),0.75rem)]">
+        <header className="rounded-2xl border border-slate-700 bg-slate-800/80 p-4 shadow-lg shadow-black/30">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-bold tracking-wide text-slate-100">Tur #{tripNumber}</p>
+            <div className="flex items-center gap-2 rounded-full border border-slate-600 bg-slate-900/70 px-3 py-1">
+              <span className={`h-2.5 w-2.5 rounded-full ${gpsOnline ? "bg-emerald-400" : "bg-red-500"}`} />
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-100">
+                {gpsOnline ? "GPS OK" : "GPS Feil"}
+              </span>
+            </div>
+          </div>
+          <p className="mt-3 text-2xl font-black leading-tight text-white">{FLOW_STEPS[currentStep]}</p>
+        </header>
 
-      <section className="overview">
-        <article className="kpi">
-          <p className="kpi__label">Registrerte kjøringer</p>
-          <p className="kpi__value">{totalLoads}</p>
-        </article>
-        <article className="kpi">
-          <p className="kpi__label">Totalt asfalt (tonn)</p>
-          <p className="kpi__value">{totalTons.toFixed(2)}</p>
-        </article>
-      </section>
+        <section className="mt-4 rounded-2xl border border-slate-700 bg-slate-800/60 px-3 py-4">
+          <div className="grid grid-cols-4 gap-2">
+            {FLOW_STEPS.map((step, index) => (
+              <div
+                key={step}
+                className={`h-2 rounded-full ${index <= currentStep ? "bg-yellow-400" : "bg-slate-700"}`}
+              />
+            ))}
+          </div>
+          <ol className="mt-3 grid grid-cols-4 gap-2">
+            {FLOW_STEPS.map((step, index) => (
+              <li
+                key={step}
+                className={`text-center text-xs font-semibold leading-tight ${
+                  index <= currentStep ? "text-slate-100" : "text-slate-500"
+                }`}
+              >
+                {index + 1}. {step}
+              </li>
+            ))}
+          </ol>
+        </section>
 
-      {error ? <p className="message message--error">{error}</p> : null}
-      {success ? <p className="message message--success">{success}</p> : null}
+        <section className="flex flex-1 flex-col justify-center">
+          <p className="mb-3 text-center text-base font-semibold text-slate-200">Neste handling</p>
+          <button
+            type="button"
+            onClick={handleMainAction}
+            className={`select-none touch-manipulation rounded-3xl border-2 border-transparent px-6 py-8 text-3xl font-black leading-tight shadow-2xl shadow-black/50 transition min-h-[64px] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/60 ${ACTION_STYLES[currentStep]}`}
+          >
+            {ACTION_LABELS[currentStep]}
+          </button>
+          <p className="mt-4 text-center text-sm font-medium text-slate-300">
+            Trykk kun når steget er fullført.
+          </p>
+        </section>
 
-      <TripForm onSubmit={handleRegisterTrip} loading={saving} />
-      <TripTable trips={overview.trips} projectTotals={overview.projectTotals} loading={loading} />
+        <footer className="space-y-2 pb-1">
+          <button
+            type="button"
+            onClick={registerDeviation}
+            className="min-h-[64px] w-full select-none touch-manipulation rounded-2xl border border-slate-600 bg-slate-800 px-6 py-4 text-base font-semibold text-slate-200 transition active:bg-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300/40"
+          >
+            Registrer avvik / venting
+          </button>
+          <p className="min-h-6 text-center text-sm text-slate-400">{lastDeviation ?? " "}</p>
+        </footer>
+      </div>
     </main>
   );
 }
