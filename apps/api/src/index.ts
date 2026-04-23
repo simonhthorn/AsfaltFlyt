@@ -20,7 +20,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/trips", tripsRouter);
 
 app.use(express.static(webDistPath));
-app.get("*", (req, res, next) => {
+app.use((req, res, next) => {
   if (req.path.startsWith("/api/")) {
     return next();
   }
