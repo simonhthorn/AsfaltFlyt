@@ -24,6 +24,35 @@ python3 scripts/apply_supabase_schema.py --mode management  # kun Management API
 python3 scripts/apply_supabase_schema.py --mode project     # kun project endpoint
 ```
 
+Dry run (viser SQL uten å sende til Supabase):
+
+```bash
+python3 scripts/apply_supabase_schema.py --dry-run
+```
+
+Legg til en kolonne i en tabell (idempotent med `IF NOT EXISTS`):
+
+```bash
+python3 scripts/apply_supabase_schema.py \
+  --add-column-table trips \
+  --add-column-name delivery_temperature_c \
+  --add-column-type NUMERIC(5,2) \
+  --add-column-default 0 \
+  --add-column-only
+```
+
+Dry run av kun kolonne-endring:
+
+```bash
+python3 scripts/apply_supabase_schema.py \
+  --add-column-table trips \
+  --add-column-name delivery_temperature_c \
+  --add-column-type NUMERIC(5,2) \
+  --add-column-default 0 \
+  --add-column-only \
+  --dry-run
+```
+
 ### Miljøvariabler
 
 - **Management API (anbefalt i auto/mode=management):**

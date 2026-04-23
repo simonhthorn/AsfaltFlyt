@@ -52,6 +52,48 @@ def read_sql_file(sql_file: Path) -> str:
     return sql
 
 
+def quote_identifier(identifier: str) -> str:
+    parts = [part.strip() for part in identifier.split(".")]
+    if not parts or any(not part for part in parts):
+        raise ValueError(f"Ugyldig SQL-identifikator: '{identifier}'")
+
+    for part in parts:
+        if not (part[0].isalpha() or part[0] == "_"):
+            raise ValueError(f"Ugyldig SQL-identifikator: '{identifier}'")
+        if not all(char.isalnum() or char == "_" for char in part):
+            raise ValueError(f"Ugyldig SQL-identifikator: '{identifier}'")
+
+    return ".".join(f'"{part}"' for part in parts)
+
+
+def ensure_trailing_semicolon(sql: str) -> str:
+    stripped = sql.strip()
+    if not stripped:
+        return stripped
+    if stripped.endswith(";"):
+        return stripped
+    return f"{stripped};"
+
+
+def build_add_column_sql(
+    table_name: str,
+    column_name: str,
+    column_type: str,
+    default_expression: str,
+    not_null: bool,
+) -> str:
+    table_sql = quote_identifier(table_name)
+    column_sql = quote_identifier(column_name)
+
+    statement = f"ALTER TABLE IF EXISTS {table_sql} ADD COLUMN IF NOT EXISTS {column_sql} {column_type.strip()}"
+    if default_expression.strip():
+        statement += f" DEFAULT {default_expression.strip()}"
+    if not_null:
+        statement += " NOT NULL"
+
+    return f"{statement};"
+
+
 def _request_json(endpoint: str, headers: dict[str, str], payload: dict[str, str], timeout: int) -> str:
     body = json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(endpoint, data=body, headers=headers, method="POST")
@@ -151,7 +193,87 @@ def main() -> int:
         default=60,
         help="Timeout per API-kall i sekunder (default: 60).",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Skriv ut SQL som ville blitt kjørt, uten å sende noe til Supabase.",
+    )
+    parser.add_argument(
+        "--add-column-table",
+        default="",
+        help="Tabellnavn for ALTER TABLE ... ADD COLUMN.",
+    )
+    parser.add_argument(
+        "--add-column-name",
+        default="",
+        help="Kolonnenavn for ALTER TABLE ... ADD COLUMN.",
+    )
+    parser.add_argument(
+        "--add-column-type",
+        default="",
+        help="SQL datatype for ny kolonne, f.eks. TEXT eller NUMERIC(8,2).",
+    )
+    parser.add_argument(
+        "--add-column-default",
+        default="",
+        help="Valgfri SQL default expression, f.eks. CURRENT_TIMESTAMP.",
+    )
+    parser.add_argument(
+        "--add-column-not-null",
+        action="store_true",
+        help="Legg til NOT NULL i ADD COLUMN-setningen.",
+    )
+    parser.add_argument(
+        "--add-column-only",
+        action="store_true",
+        help="Kjør kun generert ADD COLUMN-SQL og ignorer --sql-file.",
+    )
     args = parser.parse_args()
+
+    has_add_column_args = any(
+        (
+            args.add_column_table.strip(),
+            args.add_column_name.strip(),
+            args.add_column_type.strip(),
+            args.add_column_default.strip(),
+            args.add_column_not_null,
+            args.add_column_only,
+        )
+    )
+
+    sql_parts: list[str] = []
+    if not args.add_column_only:
+        sql_parts.append(read_sql_file(Path(args.sql_file)))
+
+    if has_add_column_args:
+        if not args.add_column_table.strip() or not args.add_column_name.strip() or not args.add_column_type.strip():
+            print(
+                "For ADD COLUMN må du sette --add-column-table, --add-column-name og --add-column-type.",
+                file=sys.stderr,
+            )
+            return 1
+        sql_parts.append(
+            build_add_column_sql(
+                table_name=args.add_column_table,
+                column_name=args.add_column_name,
+                column_type=args.add_column_type,
+                default_expression=args.add_column_default,
+                not_null=args.add_column_not_null,
+            )
+        )
+
+    sql_parts = [ensure_trailing_semicolon(sql_part) for sql_part in sql_parts if sql_part.strip()]
+    if not sql_parts:
+        print("Ingen SQL å kjøre. Oppgi --sql-file eller bruk --add-column-*.", file=sys.stderr)
+        return 1
+
+    sql = "\n\n".join(sql_parts)
+
+    if args.dry_run:
+        print("-- DRY RUN: SQL som ville blitt kjørt --")
+        print(sql)
+        print("-- DRY RUN fullført: ingen endringer sendt til Supabase --")
+        return 0
 
     supabase_url = os.getenv("SUPABASE_URL", "").strip()
     project_ref = os.getenv("SUPABASE_PROJECT_REF", "").strip() or extract_project_ref(supabase_url)
@@ -175,8 +297,6 @@ def main() -> int:
     sql_path = os.getenv("SUPABASE_SQL_PATH", DEFAULT_SQL_PATH).strip() or DEFAULT_SQL_PATH
     sql_endpoint_override = os.getenv("SUPABASE_SQL_ENDPOINT", "").strip()
     payload_key = os.getenv("SUPABASE_SQL_PAYLOAD_KEY", "query").strip() or "query"
-
-    sql = read_sql_file(Path(args.sql_file))
 
     if args.mode in ("auto", "management") and management_token:
         if not project_ref:
