@@ -94,6 +94,15 @@ def build_add_column_sql(
     return f"{statement};"
 
 
+def build_fetch_column_sql(table_name: str, column_name: str, limit: int) -> str:
+    if limit <= 0:
+        raise ValueError("--fetch-column-limit må være større enn 0.")
+
+    table_sql = quote_identifier(table_name)
+    column_sql = quote_identifier(column_name)
+    return f"SELECT {column_sql} FROM {table_sql} LIMIT {limit};"
+
+
 def _request_json(endpoint: str, headers: dict[str, str], payload: dict[str, str], timeout: int) -> str:
     body = json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(endpoint, data=body, headers=headers, method="POST")
@@ -228,6 +237,27 @@ def main() -> int:
         action="store_true",
         help="Kjør kun generert ADD COLUMN-SQL og ignorer --sql-file.",
     )
+    parser.add_argument(
+        "--fetch-column-table",
+        default="",
+        help="Tabellnavn for SELECT av én kolonne.",
+    )
+    parser.add_argument(
+        "--fetch-column-name",
+        default="",
+        help="Kolonnenavn som skal hentes med SELECT.",
+    )
+    parser.add_argument(
+        "--fetch-column-limit",
+        type=int,
+        default=20,
+        help="Antall rader som hentes ved SELECT (default: 20).",
+    )
+    parser.add_argument(
+        "--fetch-column-only",
+        action="store_true",
+        help="Kjør kun generert SELECT-kolonne SQL og ignorer --sql-file.",
+    )
     args = parser.parse_args()
 
     has_add_column_args = any(
@@ -241,8 +271,16 @@ def main() -> int:
         )
     )
 
+    has_fetch_column_args = any(
+        (
+            args.fetch_column_table.strip(),
+            args.fetch_column_name.strip(),
+            args.fetch_column_only,
+        )
+    )
+
     sql_parts: list[str] = []
-    if not args.add_column_only:
+    if not args.add_column_only and not args.fetch_column_only:
         sql_parts.append(read_sql_file(Path(args.sql_file)))
 
     if has_add_column_args:
@@ -261,6 +299,25 @@ def main() -> int:
                 not_null=args.add_column_not_null,
             )
         )
+
+    if has_fetch_column_args:
+        if not args.fetch_column_table.strip() or not args.fetch_column_name.strip():
+            print(
+                "For FETCH COLUMN må du sette --fetch-column-table og --fetch-column-name.",
+                file=sys.stderr,
+            )
+            return 1
+        try:
+            sql_parts.append(
+                build_fetch_column_sql(
+                    table_name=args.fetch_column_table,
+                    column_name=args.fetch_column_name,
+                    limit=args.fetch_column_limit,
+                )
+            )
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
 
     sql_parts = [ensure_trailing_semicolon(sql_part) for sql_part in sql_parts if sql_part.strip()]
     if not sql_parts:

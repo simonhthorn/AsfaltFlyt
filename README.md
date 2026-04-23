@@ -53,6 +53,25 @@ python3 scripts/apply_supabase_schema.py \
   --dry-run
 ```
 
+Hent en kolonne fra en tabell (returnerer inntil 20 rader som default):
+
+```bash
+python3 scripts/apply_supabase_schema.py \
+  --fetch-column-table trips \
+  --fetch-column-name ticket_number \
+  --fetch-column-only
+```
+
+Du kan styre antall rader:
+
+```bash
+python3 scripts/apply_supabase_schema.py \
+  --fetch-column-table trips \
+  --fetch-column-name ticket_number \
+  --fetch-column-limit 50 \
+  --fetch-column-only
+```
+
 ### Miljøvariabler
 
 - **Management API (anbefalt i auto/mode=management):**
